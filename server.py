@@ -4,8 +4,8 @@ import socket
 # CONFIGURAÇÕES DO SERVIDOR
 # ============================
 
-HOST = "127.0.0.1"      # Endereço local (localhost)
-PORT = 5000             # Porta escolhida
+HOST = "127.0.0.1"
+PORT = 5000
 
 # ============================
 # CRIAÇÃO DO SOCKET
@@ -13,10 +13,8 @@ PORT = 5000             # Porta escolhida
 
 server = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
 
-# Associa o socket ao IP e à porta
 server.bind((HOST, PORT))
 
-# Coloca o servidor em modo de espera
 server.listen(1)
 
 print("=" * 40)
@@ -26,16 +24,31 @@ print(f"Servidor iniciado em {HOST}:{PORT}")
 print("Aguardando conexão do cliente...")
 print("=" * 40)
 
-# Aguarda até que um cliente se conecte
+# Aguarda conexão
 client_socket, client_address = server.accept()
 
 print(f"Cliente conectado: {client_address}")
 print("Conexão estabelecida com sucesso!")
 
-# Fecha a conexão do cliente
-client_socket.close()
+# ============================
+# RECEBE MENSAGEM DO CLIENTE
+# ============================
 
-# Fecha o servidor
+message = client_socket.recv(1024).decode()
+
+print(f"Cliente: {message}")
+
+# ============================
+# ENVIA RESPOSTA
+# ============================
+
+response = "Olá! Tudo bem?"
+
+client_socket.send(response.encode())
+
+print("Resposta enviada!")
+
+client_socket.close()
 server.close()
 
 print("Servidor encerrado.")

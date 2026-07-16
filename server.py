@@ -1,4 +1,5 @@
 import socket
+from datetime import datetime
 
 # ============================
 # CONFIGURAÇÕES DO SERVIDOR
@@ -12,43 +13,56 @@ PORT = 5000
 # ============================
 
 server = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-
 server.bind((HOST, PORT))
-
 server.listen(1)
 
-print("=" * 40)
+print("=" * 50)
 print("SERVIDOR TCP")
-print("=" * 40)
-print(f"Servidor iniciado em {HOST}:{PORT}")
-print("Aguardando conexão do cliente...")
-print("=" * 40)
+print("=" * 50)
+print(f"Aguardando conexão em {HOST}:{PORT}...")
 
 # Aguarda conexão
 client_socket, client_address = server.accept()
-
 print(f"Cliente conectado: {client_address}")
-print("Conexão estabelecida com sucesso!")
+print("Chat iniciado! (Digite 'exit' para encerrar)")
+print("=" * 50)
+
 
 # ============================
-# RECEBE MENSAGEM DO CLIENTE
+# LOOP DE COMUNICAÇÃO
 # ============================
 
-message = client_socket.recv(1024).decode()
+while True:
+    
+    print("Aguardando resposta...")
+    
+    message = client_socket.recv(1024).decode()
+    
+    print("\033[A\033[K", end="") #Apaga a mensagem "Aguardando resposta..."
 
-print(f"Cliente: {message}")
+    if not message or message.lower() in ['exit']:
+        print("\nO cliente encerrou o chat.")
+        break
+    
+    hora_atual = datetime.now().strftime("%H:%M:%S")
+    print(f"[{hora_atual}] Cliente: {message}")
+    
+    response = input("Digite sua mensagem: ")
+    
+    hora_atual = datetime.now().strftime("%H:%M:%S")
+    
+    print(f"\033[A\033[K[{hora_atual}] Você: {response}") #Apaga a mensagem "Digite sua mensagem" e substitui por "Você:"
+    
+    client_socket.send(response.encode())
+    
+    if response.lower() in ['sair', 'exit']:
+        print("\nVocê encerrou o chat.")
+        break
 
 # ============================
-# ENVIA RESPOSTA
+# ENCERRAMENTO
 # ============================
-
-response = "Olá! Tudo bem?"
-
-client_socket.send(response.encode())
-
-print("Resposta enviada!")
 
 client_socket.close()
 server.close()
-
 print("Servidor encerrado.")

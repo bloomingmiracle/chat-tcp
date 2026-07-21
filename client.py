@@ -1,4 +1,6 @@
 import socket
+import threading
+import os
 from datetime import datetime
 
 # ============================
@@ -23,46 +25,67 @@ try:
     print("Conectado ao servidor! (Digite 'exit' para encerrar)")
     print("=" * 50)
 
-
-# ============================
-# LOOP DE COMUNICAÇÃO
-# ============================
+    # ============================
+    # THREAD DE RECEBIMENTO
+    # ============================
     
-    while True:
+    def receber_mensagens():
+        while True:
+            try:
+                # Fica aguardando a resposta do servidor
+                response = client.recv(1024).decode()
+                
+                # Se a resposta for vazia ou 'exit', encerra
+                if not response or response.lower() in ['exit']:
+                    print("\n[Aviso] O servidor encerrou o chat.")
+                    client.close()
+                    os._exit(0) # Força o encerramento do programa
+                    
+                # Captura a hora e exibe a mensagem recebida
+                hora_atual = datetime.now().strftime("%H:%M:%S")
+                print(f"\r\033[K[{hora_atual}] Servidor: {response}")
+                
+                # Reescreve o prompt para o usuário não se perder
+                print("Digite sua mensagem: ", end="", flush=True)
+                
+            except ConnectionAbortedError:
+                break
+            except ConnectionResetError:
+                print("\n[Erro] O servidor foi desconectado bruscamente.")
+                os._exit(0)
+            except Exception:
+                break
 
+    # Inicia a função receber_mensagens() rodando em paralelo
+    thread = threading.Thread(target=receber_mensagens, daemon=True)
+    thread.start()
+
+    # ============================
+    # LOOP DE ENVIO (FLUXO PRINCIPAL)
+    # ============================
+    while True:
+        # Cliente digita a mensagem
         message = input("Digite sua mensagem: ")
+        
         hora_atual = datetime.now().strftime("%H:%M:%S")
         
-        print(f"\033[A\033[K[{hora_atual}] Você: {message}") #Apaga a mensagem "Digite sua mensagem" e substitui por "Você:"
+        # Apaga a linha do input e imprime o formato definitivo
+        print(f"\033[A\033[K[{hora_atual}] Você: {message}")
         
+        # Envia a mensagem
         client.send(message.encode())
         
         if message.lower() in ['exit']:
             print("\nVocê encerrou o chat.")
             break
 
-        print("Aguardando resposta...")
-
-        response = client.recv(1024).decode()
-        
-        print("\033[A\033[K", end="") #Apaga a mensagem "Aguardando resposta..."
-        
-        if not response or response.lower() in ['sair', 'exit']:
-            print("\nO servidor encerrou o chat.")
-            break
-            
-        hora_atual = datetime.now().strftime("%H:%M:%S")
-        print(f"[{hora_atual}] Servidor: {response}")
-
 except ConnectionRefusedError:
-    print("Erro: Não foi possível conectar ao servidor.")
+    print("Erro: Não foi possível conectar ao servidor. Verifique se ele está rodando.")
 
 finally:
-
-# ============================
-# ENCERRAMENTO
-# ============================
-
+    
+    # ============================
+    # ENCERRAMENTO
+    # ============================
     client.close()
     print("Cliente encerrado.")
-    print("=" * 50)
